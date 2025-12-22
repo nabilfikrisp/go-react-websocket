@@ -8,6 +8,6 @@ import (
 // This is the only thing tests are allowed to depend on.
 func NewServer() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", wsHandler)
+	mux.HandleFunc("/ws", WSHandler)
 	return mux
 }

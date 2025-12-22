@@ -31,7 +31,7 @@ type outgoingMessage struct {
 	Content string `json:"content"`
 }
 
-func wsHandler(w http.ResponseWriter, r *http.Request) {
+func WSHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
