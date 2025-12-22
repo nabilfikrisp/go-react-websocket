@@ -2,14 +2,33 @@ package chat
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
+type client struct {
+	name string
+	conn *websocket.Conn
+}
+
+var (
+	clients = make(map[*websocket.Conn]*client)
+	mu      sync.Mutex
+)
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+type incomingMessage struct {
+	Content string `json:"content"`
+}
+
+type outgoingMessage struct {
+	Sender  string `json:"sender"`
+	Content string `json:"content"`
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -25,11 +44,39 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	// Keep the connection alive.
-	// No message handling yet — just block.
+	// Register client
+	mu.Lock()
+	clients[conn] = &client{name: name, conn: conn}
+	mu.Unlock()
+
+	// Cleanup on disconnect
+	defer func() {
+		mu.Lock()
+		delete(clients, conn)
+		mu.Unlock()
+	}()
+
 	for {
-		if _, _, err := conn.ReadMessage(); err != nil {
+		var msg incomingMessage
+		if err := conn.ReadJSON(&msg); err != nil {
 			return
 		}
+
+		// Ignore empty messages (will be enforced by Test 4)
+		if msg.Content == "" {
+			continue
+		}
+
+		out := outgoingMessage{
+			Sender:  name,
+			Content: msg.Content,
+		}
+
+		// Broadcast to all clients
+		mu.Lock()
+		for _, c := range clients {
+			_ = c.conn.WriteJSON(out)
+		}
+		mu.Unlock()
 	}
 }
