@@ -1,7 +1,13 @@
-import { ComponentExample } from "@/components/component-example";
+import { useState } from "react";
+import { NameGate } from "./components/chat/name-gate";
+import { ChatShell } from "./components/chat/chat-shell";
 
-export function App() {
-return <ComponentExample />;
+export default function App() {
+  const [name, setName] = useState<string | null>(null);
+
+  if (name === null) {
+    return <NameGate onJoin={setName} />;
+  }
+
+  return <ChatShell name={name} />;
 }
-
-export default App;
