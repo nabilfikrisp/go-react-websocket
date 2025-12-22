@@ -8,5 +8,5 @@ type Props = {
 export function ChatShell({ name }: Props) {
   const chat = useChatSocket(name);
 
-  return <ChatRoom {...chat} />;
+  return <ChatRoom {...chat} currentUser={name} />;
 }

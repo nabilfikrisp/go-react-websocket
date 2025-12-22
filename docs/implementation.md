@@ -61,6 +61,18 @@ This document describes the **current implementation approach**.
 
 ---
 
+## Chat room projection
+
+- Messages are rendered as chat bubbles
+- Own messages are visually distinct
+- Consecutive messages from the same sender are grouped
+
+---
+
+## TBD
+
+- build react and then serve static from go
+
 ## Notes
 
 - Refactors are allowed
@@ -68,10 +80,3 @@ This document describes the **current implementation approach**.
 - Files may be split or merged
 
 As long as the contract holds, the implementation is valid.
-
----
-
-If you want next:
-
-- a **diff checklist** for deciding SemVer PATCH vs MINOR
-- or a **future `0.2.0` contract example** (e.g. persistence or rooms)
