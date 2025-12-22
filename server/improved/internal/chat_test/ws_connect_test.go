@@ -127,3 +127,42 @@ func TestBroadcastMessage(t *testing.T) {
 		t.Fatalf("expected content 'Hello', got '%s'", msg.Content)
 	}
 }
+
+// Contract:
+// Empty messages MUST NOT be broadcast to other clients.
+func TestRejectEmptyMessage(t *testing.T) {
+	server := httptest.NewServer(setupServer())
+	defer server.Close()
+
+	baseWSURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws"
+
+	// Connect Alice
+	aliceConn, _, err := websocket.DefaultDialer.Dial(baseWSURL+"?name=Alice", nil)
+	if err != nil {
+		t.Fatalf("failed to connect Alice: %v", err)
+	}
+	defer aliceConn.Close()
+
+	// Connect Bob
+	bobConn, _, err := websocket.DefaultDialer.Dial(baseWSURL+"?name=Bob", nil)
+	if err != nil {
+		t.Fatalf("failed to connect Bob: %v", err)
+	}
+	defer bobConn.Close()
+
+	// Alice sends empty message
+	err = aliceConn.WriteJSON(map[string]string{
+		"content": "",
+	})
+	if err != nil {
+		t.Fatalf("failed to send empty message: %v", err)
+	}
+
+	// Bob must NOT receive anything
+	_ = bobConn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+	_, _, err = bobConn.ReadMessage()
+
+	if err == nil {
+		t.Fatalf("expected no message to be broadcast for empty input, but Bob received one")
+	}
+}
