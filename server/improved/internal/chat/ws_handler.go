@@ -8,27 +8,28 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // irrelevant for now
+		return true
 	},
 }
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
-	// Extract name from query
 	name := r.URL.Query().Get("name")
-
-	// Reject anonymous connections
 	if name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
 
-	// Upgrade only if name exists
-	_, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
+	defer conn.Close()
 
-	// IMPORTANT:
-	// Do nothing else yet.
-	// Next tests will force structure to appear.
+	// Keep the connection alive.
+	// No message handling yet — just block.
+	for {
+		if _, _, err := conn.ReadMessage(); err != nil {
+			return
+		}
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -35,5 +36,39 @@ func TestRejectAnonymousConnection(t *testing.T) {
 	// Explicitly forbid successful upgrade
 	if resp.StatusCode == http.StatusSwitchingProtocols {
 		t.Fatalf("expected websocket upgrade to be rejected, got status 101")
+	}
+}
+
+// Contract:
+// A WebSocket connection WITH a name MUST be accepted.
+func TestAcceptNamedConnection(t *testing.T) {
+	// Arrange
+	server := httptest.NewServer(setupServer())
+	defer server.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws?name=Alice"
+
+	// Act
+	conn, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("expected websocket connection to succeed, got error: %v", err)
+	}
+	defer conn.Close()
+
+	if resp.StatusCode != 101 {
+		t.Fatalf("expected status 101 Switching Protocols, got %d", resp.StatusCode)
+	}
+
+	// Assert connection is not immediately closed
+	_ = conn.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
+	_, _, err = conn.ReadMessage()
+
+	if err == nil {
+		// No message is fine, but connection must still be alive
+		return
+	}
+
+	if websocket.IsUnexpectedCloseError(err) {
+		t.Fatalf("connection was closed unexpectedly after successful upgrade")
 	}
 }
