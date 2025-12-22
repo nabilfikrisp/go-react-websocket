@@ -74,8 +74,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Broadcast to all clients
 		mu.Lock()
-		for _, c := range clients {
-			_ = c.conn.WriteJSON(out)
+		for cConn, c := range clients {
+			if err := c.conn.WriteJSON(out); err != nil {
+				// Remove dead client immediately
+				delete(clients, cConn)
+				cConn.Close()
+			}
 		}
 		mu.Unlock()
 	}

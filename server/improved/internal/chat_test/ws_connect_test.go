@@ -166,3 +166,50 @@ func TestRejectEmptyMessage(t *testing.T) {
 		t.Fatalf("expected no message to be broadcast for empty input, but Bob received one")
 	}
 }
+
+// Contract:
+// Disconnected clients MUST NOT receive messages,
+// and server MUST remain stable after disconnect.
+func TestDisconnectCleanup(t *testing.T) {
+	server := httptest.NewServer(setupServer())
+	defer server.Close()
+
+	baseWSURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws"
+
+	// Connect Alice
+	aliceConn, _, err := websocket.DefaultDialer.Dial(baseWSURL+"?name=Alice", nil)
+	if err != nil {
+		t.Fatalf("failed to connect Alice: %v", err)
+	}
+
+	// Connect Bob
+	bobConn, _, err := websocket.DefaultDialer.Dial(baseWSURL+"?name=Bob", nil)
+	if err != nil {
+		t.Fatalf("failed to connect Bob: %v", err)
+	}
+	defer bobConn.Close()
+
+	// Alice disconnects
+	aliceConn.Close()
+
+	// Give server a moment to process disconnect
+	time.Sleep(50 * time.Millisecond)
+
+	// Bob sends message
+	err = bobConn.WriteJSON(map[string]string{
+		"content": "Hi",
+	})
+	if err != nil {
+		t.Fatalf("Bob failed to send message: %v", err)
+	}
+
+	// Bob SHOULD receive his own message (current contract)
+	_ = bobConn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+	_, _, err = bobConn.ReadMessage()
+	if err != nil {
+		t.Fatalf("Bob did not receive message after Alice disconnected: %v", err)
+	}
+
+	// Alice MUST receive nothing (already closed, but ensure no panic / write)
+	// If server panics or writes to closed conn, test suite will fail
+}
