@@ -8,7 +8,8 @@ export type ChatMessage = {
 
 type Status = "connecting" | "open" | "closed" | "error";
 
-export const CHAT_WS_ENDPOINT = "ws://localhost:3001/ws";
+const protocol = location.protocol === "https:" ? "wss" : "ws";
+const CHAT_WS_ENDPOINT = `${protocol}://${location.host}/ws`;
 
 export function useChatSocket(name: string) {
   const socketRef = useRef<WebSocket | null>(null);

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"go-websocket-improved/internal/chat"
 )
@@ -10,16 +11,24 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
-	// Base endpoint
+	// Static client (SPA)
+	fs := http.FileServer(http.Dir("static"))
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
+		// Serve index.html for SPA routes
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "static/index.html")
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","message":"hello"}`))
+		// Try static file
+		if _, err := os.Stat("static" + r.URL.Path); err == nil {
+			fs.ServeHTTP(w, r)
+			return
+		}
+
+		// Fallback to SPA entry
+		http.ServeFile(w, r, "static/index.html")
 	})
 
 	// WebSocket endpoint

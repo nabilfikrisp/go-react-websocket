@@ -1,0 +1,5 @@
+services:
+  app:
+    image: chat-app
+    ports:
+      - "3001:3001"

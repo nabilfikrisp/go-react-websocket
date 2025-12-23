@@ -17,13 +17,15 @@ export function NameGate({ onJoin }: Props) {
 
   return (
     <div className="flex h-screen items-center justify-center">
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <Input
           placeholder="Enter your name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <Button onClick={handleJoin}>Join</Button>
+        <Button onClick={handleJoin} className="ml-auto">
+          Join
+        </Button>
       </div>
     </div>
   );
