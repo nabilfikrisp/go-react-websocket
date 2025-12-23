@@ -1,12 +1,14 @@
 // chat-room.tsx
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { SentIcon } from "@hugeicons/core-free-icons";
 import type { ChatMessage } from "./use-chat-socket";
+import { ThemeToggler } from "../theme-toggler";
+import { Textarea } from "../ui/textarea";
 
 type Props = {
   status: "connecting" | "open" | "closed" | "error";
@@ -64,9 +66,12 @@ export function ChatRoom({ status, messages, send, currentUser }: Props) {
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
             <CardTitle>Chat Room</CardTitle>
-            <Badge variant={getStatusVariant()}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </Badge>
+            <div className="flex gap-4 items-center">
+              <ThemeToggler />
+              <Badge variant={getStatusVariant()}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
@@ -107,18 +112,20 @@ export function ChatRoom({ status, messages, send, currentUser }: Props) {
           </div>
 
           <div className="flex gap-2">
-            <Input
+            <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyPress}
               disabled={disabled}
               placeholder={disabled ? "Connecting..." : "Type a message..."}
-              className="flex-1"
+              className="flex-1 resize-none max-h-40 overflow-y-auto min-h-8"
             />
+
             <Button
               onClick={handleSend}
               disabled={disabled || !text.trim()}
               size="icon"
+              className="mt-auto"
             >
               <HugeiconsIcon icon={SentIcon} strokeWidth={2} />
             </Button>

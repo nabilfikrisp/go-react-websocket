@@ -1,0 +1,16 @@
+# frontend
+client/react/node_modules
+client/react/dist
+client/react/.vite
+
+# tooling
+.git
+.gitignore
+.vscode
+.idea
+
+# OS junk
+.DS_Store
+
+# backend build artifacts
+server/**/bin
