@@ -31,22 +31,6 @@ type incomingMessage struct {
 	Content string `json:"content"`
 }
 
-/*
-Server → Client (new contract)
-*/
-type chatEvent struct {
-	Type      string `json:"type"`
-	Timestamp int64  `json:"timestamp"`
-
-	// message
-	Sender  string `json:"sender,omitempty"`
-	Content string `json:"content,omitempty"`
-
-	// system
-	Event string `json:"event,omitempty"`
-	User  string `json:"user,omitempty"`
-}
-
 func WSHandler(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
@@ -66,7 +50,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 	mu.Unlock()
 
 	// Broadcast join event
-	joinEvent := chatEvent{
+	joinEvent := ChatEvent{
 		Type:      "system",
 		Event:     "join",
 		User:      name,
@@ -84,7 +68,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Ensure leave event is broadcast on disconnect
 	defer func() {
-		leaveEvent := chatEvent{
+		leaveEvent := ChatEvent{
 			Type:      "system",
 			Event:     "leave",
 			User:      name,
@@ -114,7 +98,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		event := chatEvent{
+		event := ChatEvent{
 			Type:      "message",
 			Sender:    name,
 			Content:   msg.Content,

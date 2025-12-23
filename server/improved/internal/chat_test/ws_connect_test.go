@@ -11,19 +11,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type chatEvent struct {
-	Type      string `json:"type"`
-	Timestamp int64  `json:"timestamp"`
-
-	// message event
-	Sender  string `json:"sender,omitempty"`
-	Content string `json:"content,omitempty"`
-
-	// system event
-	Event string `json:"event,omitempty"`
-	User  string `json:"user,omitempty"`
-}
-
 type outgoingMessage struct {
 	Content string `json:"content"`
 }

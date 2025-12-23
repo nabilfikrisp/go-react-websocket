@@ -8,3 +8,5 @@ import (
 func setupServer() http.Handler {
 	return chat.NewServer()
 }
+
+type chatEvent chat.ChatEvent
