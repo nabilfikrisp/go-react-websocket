@@ -1,5 +1,7 @@
 services:
   app:
-    image: chat-app
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3001:3001"
