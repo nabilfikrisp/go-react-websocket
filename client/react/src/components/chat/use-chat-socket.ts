@@ -1,10 +1,19 @@
 // use-chat-socket.ts
 import { useEffect, useRef, useState } from "react";
 
-export type ChatMessage = {
-  sender: string;
-  content: string;
-};
+export type ChatEvent =
+  | {
+      type: "message";
+      sender: string;
+      content: string;
+      timestamp: number;
+    }
+  | {
+      type: "system";
+      event: "join" | "leave";
+      user: string;
+      timestamp: number;
+    };
 
 type Status = "connecting" | "open" | "closed" | "error";
 
@@ -15,7 +24,7 @@ export function useChatSocket(name: string) {
   const socketRef = useRef<WebSocket | null>(null);
   const didUnmountRef = useRef(false);
   const [status, setStatus] = useState<Status>("connecting");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [events, setEvents] = useState<ChatEvent[]>([]);
 
   useEffect(() => {
     console.log("useChatSocket MOUNT");
@@ -36,7 +45,7 @@ export function useChatSocket(name: string) {
       if (socket.readyState !== WebSocket.OPEN) return;
 
       const data = JSON.parse(event.data);
-      setMessages((prev) => [...prev, data]);
+      setEvents((prev) => [...prev, data]);
     };
 
     socket.onerror = () => {
@@ -81,7 +90,7 @@ export function useChatSocket(name: string) {
 
   return {
     status,
-    messages,
+    events,
     send,
   };
 }

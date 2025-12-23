@@ -69,10 +69,6 @@ This document describes the **current implementation approach**.
 
 ---
 
-## TBD
-
-- build react and then serve static from go
-
 ## Notes
 
 - Refactors are allowed

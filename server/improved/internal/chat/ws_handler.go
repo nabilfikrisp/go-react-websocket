@@ -3,6 +3,7 @@ package chat
 import (
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -16,19 +17,34 @@ var (
 	clients = make(map[*websocket.Conn]*client)
 	mu      sync.Mutex
 )
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
 }
 
+/*
+Client → Server (unchanged)
+*/
 type incomingMessage struct {
 	Content string `json:"content"`
 }
 
-type outgoingMessage struct {
-	Sender  string `json:"sender"`
-	Content string `json:"content"`
+/*
+Server → Client (new contract)
+*/
+type chatEvent struct {
+	Type      string `json:"type"`
+	Timestamp int64  `json:"timestamp"`
+
+	// message
+	Sender  string `json:"sender,omitempty"`
+	Content string `json:"content,omitempty"`
+
+	// system
+	Event string `json:"event,omitempty"`
+	User  string `json:"user,omitempty"`
 }
 
 func WSHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,10 +65,41 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = &client{name: name, conn: conn}
 	mu.Unlock()
 
-	// Cleanup on disconnect
+	// Broadcast join event
+	joinEvent := chatEvent{
+		Type:      "system",
+		Event:     "join",
+		User:      name,
+		Timestamp: time.Now().UnixMilli(),
+	}
+
+	mu.Lock()
+	for cConn, c := range clients {
+		if err := c.conn.WriteJSON(joinEvent); err != nil {
+			delete(clients, cConn)
+			cConn.Close()
+		}
+	}
+	mu.Unlock()
+
+	// Ensure leave event is broadcast on disconnect
 	defer func() {
+		leaveEvent := chatEvent{
+			Type:      "system",
+			Event:     "leave",
+			User:      name,
+			Timestamp: time.Now().UnixMilli(),
+		}
+
 		mu.Lock()
 		delete(clients, conn)
+
+		for cConn, c := range clients {
+			if err := c.conn.WriteJSON(leaveEvent); err != nil {
+				delete(clients, cConn)
+				cConn.Close()
+			}
+		}
 		mu.Unlock()
 	}()
 
@@ -62,21 +109,22 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Ignore empty messages (will be enforced by Test 4)
+		// Ignore empty messages
 		if msg.Content == "" {
 			continue
 		}
 
-		out := outgoingMessage{
-			Sender:  name,
-			Content: msg.Content,
+		event := chatEvent{
+			Type:      "message",
+			Sender:    name,
+			Content:   msg.Content,
+			Timestamp: time.Now().UnixMilli(),
 		}
 
-		// Broadcast to all clients
+		// Broadcast message event
 		mu.Lock()
 		for cConn, c := range clients {
-			if err := c.conn.WriteJSON(out); err != nil {
-				// Remove dead client immediately
+			if err := c.conn.WriteJSON(event); err != nil {
 				delete(clients, cConn)
 				cConn.Close()
 			}
